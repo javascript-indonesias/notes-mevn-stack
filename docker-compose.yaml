@@ -1,0 +1,45 @@
+version: "3.8"
+# Menggunakan NGINX untuk reverse proxy
+services:
+  db:
+    image: postgres:12-alpine
+    container_name: postgre-fullstack-container
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:z
+      - ./postgredbdata:/var/lib/postgresql/data:z
+    environment:
+      POSTGRES_PASSWORD: hellopassword1234
+      POSTGRES_DB: notesdb
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    container_name: api-nodefullstack-container
+    volumes:
+      - /usr/app/node_modules
+      - ./api:/usr/app
+    environment:
+        DB_CONNECTION: pg
+        DB_HOST: db ## same as the database service name
+        DB_PORT: 5432
+        DB_USER: postgres
+        DB_DATABASE: notesdb
+        DB_PASSWORD: hellopassword1234
+    depends_on:
+        - db
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: client-nodefullstack-container
+    volumes:
+      - /usr/app/node_modules
+      - ./client:/usr/app
+    environment:
+      VUE_APP_API_URL: /api
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    ports:
+      - 3200:80
